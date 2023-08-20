@@ -1,0 +1,210 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+# some metadata about the template itself
+metadata:
+  name: v1beta3-demo
+  title: YAML Creator
+  description: Creates a YAML file of a specific type
+spec:
+  owner: backstage/techdocs-core
+  type: service
+
+  # these are the steps which are rendered in the frontend with the form input
+  parameters:
+
+    # step1
+    - title: Create component
+      required:
+        - componentName
+      properties:
+        componentName:
+          title: Name
+          type: string
+          description: Unique name of the component
+          ui:autofocus: true
+          pattern: "[a-zA-Z]+[a-zA-Z0-9]*"
+          ui:help: "Must start with: alphabetical letter"
+
+    # step2
+    - title: Fill in parameters
+      required:
+        - simpleText
+        - regexText
+        - passwordText
+        - arrayOption
+        - booleanOption
+      properties:
+
+        simpleText:
+          title: SimpleText
+          type: string
+          description: A simple string value
+          ui:autofocus: true
+
+        regexText:
+          title: RegexText
+          type: string
+          description: A simple string value which is checked against a regex expression
+          pattern: '^[a-zA-Z0-9\\.]+@[a-zA-Z0-9\\.]+$'
+          ui:help: "Must contain: @-symbol"
+
+        passwordText:
+          title: PasswordText
+          type: string
+          description: A simple string value which is hidden by dots
+          ui:widget: password
+
+        arrayOption:
+          title: ArrayOption
+          type: string
+          description: Choose one out of the 3 options
+          enum:
+            - opt1
+            - opt2
+            - opt3
+          enumNames:
+            - 'Option 1'
+            - 'Option 2'
+            - 'Option 3'
+
+        multipleOptions:
+          title: MultipleOptions
+          type: array
+          items:
+            type: string
+            enum:
+             - production
+             - staging
+             - development
+          uniqueItems: true
+          ui:widget: checkboxes
+          description: Choose one or more out of the 3 options
+
+        booleanOption:
+          title: BooleanOption
+          type: boolean
+          description: A simple boolean value
+
+    # step3
+    - title: Push file to GitHub
+      required:
+        - repoName
+        - commitMessage
+        - gitCommitName
+        - gitCommitMail
+      properties:
+        repoName:
+          title: Repository
+          description: Name of the repository to which the file should be pushed
+          type: string
+          default: templateComponent_ba
+          ui:autofocus: true
+
+        commitMessage:
+          title: Commit message
+          type: string
+          description: Commit message
+
+        gitCommitName:
+          title: Commit author name
+          type: string
+          description: Commit author details
+          default: Some author
+
+        gitCommitMail:
+          title: Commit mail
+          type: string
+          description: Commit author details
+          default: someauthor@mail.com
+          pattern: '^[a-zA-Z0-9\\.]+@[a-zA-Z0-9\\.]+$'
+          ui:help: "Must contain: @-symbol"
+
+  # steps that are executed in series in the scaffolder backend
+  steps:
+
+    # build repoUrl from repoName, ownerName and user token
+    - id: build-repourl
+      name: "Fetch repository information"
+      action: floni:repoUrl:build
+      input:
+        repoName: ${{ parameters.repoName }}
+
+    # clone remote repo
+    - id: git1
+      name: "GitHub: Clone remote repository"
+      action: git:clone
+      input:
+        repoUrl: ${{ steps['build-repourl'].output.repoUrl }}
+        workingDirectory: .
+
+    # fetch template, copy files into directory and template variables into file
+    - id: fetch-base
+      name: "Fetch template"
+      action: fetch:template
+      input:
+        url: ./content
+        targetPath: ./templateComponent_ba
+        replace: true
+        values: # pass values from the form to the templating engine which templates the values into content.yaml
+          componentName: ${{ parameters.componentName }}
+          simpleText: ${{ parameters.simpleText }}
+          regexText: ${{ parameters.regexText }}
+          passwordText: ${{ parameters.passwordText }}
+          arrayOption: ${{ parameters.arrayOption }}
+          multipleOptions: ${{ parameters.multipleOptions }}
+          booleanOption: ${{ parameters.booleanOption }}
+
+    # add tiles to local repo
+    - id: git2
+      name: "GitHub: Add files to local repository"
+      action: git
+      input:
+        command: 'add'
+        workingDirectory: ./templateComponent_ba
+        args: ['--all']
+
+    # set commit author
+    - id: git3
+      name: "GitHub: Setting author (name)"
+      action: git
+      input:
+        command: 'config'
+        workingDirectory: ./templateComponent_ba
+        args: ['user.name', '${{ parameters.gitCommitName }}']
+
+    # set commit mail
+    - id: git4
+      name: "GitHub: Setting author (mail)"
+      action: git
+      input:
+        command: 'config'
+        workingDirectory: ./templateComponent_ba
+        args: [ 'user.email', '${{ parameters.gitCommitMail }}']
+
+    # commit files
+    - id: git5
+      name: "GitHub: Commit files"
+      action: git
+      input:
+        command: 'commit'
+        workingDirectory: ./templateComponent_ba
+        args: ['-m', '${{ parameters.commitMessage }}']
+
+    # push files to remote repo
+    - id: git6
+      name: "GitHub: Push files to remote repository"
+      action: git
+      input:
+        command: 'push'
+        workingDirectory: ./templateComponent_ba
+        args: ['origin', 'master']
+
+        #repoUrl: github.com?repo=templateComponent_ba&owner=floriannr24
+
+     # register component in software catalog
+#    - id: register
+#      name: Register
+#      action: catalog:register
+#      input:
+#        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+#        catalogInfoPath: '/catalog-info.yaml'
