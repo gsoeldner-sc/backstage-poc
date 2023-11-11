@@ -99,6 +99,18 @@ spec:
           destination: ${{ parameters.repoUrl | parseRepoUrl }}
           owner: ${{ parameters.owner }}
           system: ${{ parameters.system }}
+
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        allowedHosts: ["github.com"]
+        repoVisibility: public
+        description: "This repository contains the infrastructure code for the ${{ parameters.name }} component"
+        repoUrl: https://github.com/gsoeldner-sc/backstage-poc
+        defaultBranch: main
+        requiredApprovingReviewCount: 0
+        protectDefaultBranch: false
     - id: register
       name: Registering the Catalog Info Component
       action: catalog:register
