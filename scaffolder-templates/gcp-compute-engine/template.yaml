@@ -99,4 +99,9 @@ spec:
           destination: ${{ parameters.repoUrl | parseRepoUrl }}
           owner: ${{ parameters.owner }}
           system: ${{ parameters.system }}
-
+    - id: register
+      name: Registering the Catalog Info Component
+      action: catalog:register
+      input:
+        repoContentsUrl: https://gitlab.com/soeldnerconsult1
+        catalogInfoPath: '/catalog-info.yaml'
