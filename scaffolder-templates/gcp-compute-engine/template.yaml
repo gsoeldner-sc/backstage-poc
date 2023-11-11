@@ -88,3 +88,15 @@ spec:
       action: debug:log
       input:
         message: 'Hello, ${{ parameters.name }}!'
+    - id: template
+      name: Render the Backstage template
+      action: fetch:template
+      input:
+        url: ./template
+        values:
+          name: "${{ parameters.name }}"
+          description: ${{ parameters.description }}
+          destination: ${{ parameters.repoUrl | parseRepoUrl }}
+          owner: ${{ parameters.owner }}
+          system: ${{ parameters.system }}
+
