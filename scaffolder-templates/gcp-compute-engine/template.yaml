@@ -1,0 +1,90 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: gcp-compute-engine
+  title: Create a new Virtual Machine
+  description: |
+    A template for creating a new Virtual Machine via Terraform and GitLab.
+  tags:
+  - terraform
+  - vm
+  - gcp
+spec:
+  owner: group:infrastructure
+  type: infrastructure
+  parameters:
+  - title: Provide project information
+    required:
+    - name
+    - owner
+    properties:
+      name:
+        title: Name
+        type: string
+        description: Unique name of the GCP project.
+        ui:
+          field: EntityNamePicker
+      description:
+        title: Description
+        type: string
+        description: Tell us more about this project.
+      system:
+        title: System
+        type: string
+        description: System this component belongs to.
+        ui:field: EntityPicker
+        ui:options:
+          catalogFilter:
+          - kind: System
+      owner:
+        title: Owner
+        type: string
+        description: Owner of the component
+        ui:field: OwnerPicker
+        ui:options:
+          catalogFilter:
+          - kind: Group
+  - title: Configure Terraform template
+    required:
+    - project
+    - region
+    properties:
+      project:
+        title: Project
+        type: string
+        description: The GCP project  to use for the Terraform deployment
+      region:
+        title: Region
+        type: string
+        enum:
+        - europe-west3
+        - europe-west7
+        default: europe-west3
+        description: |
+          The region to deploy the virtual machine to
+      instanceType:
+        title: VM Node Instance Type
+        description: Instance type to use for compute engine
+        type: string
+        enum:
+        - n1-standard-1
+        - n1-standard-2
+        - n1-standard-4
+        default: n1-standard-1
+  - title: Choose a GitHub repository location
+    required:
+    - repoUrl
+    properties:
+      repoUrl:
+        title: Repository Location
+        type: string
+        ui:field: RepoUrlPicker
+        ui:options:
+          allowedHosts:
+          - github.com
+  steps:
+    - id: log-message
+      name: Log Message
+      action: debug:log
+      input:
+        message: 'Hello, ${{ parameters.name }}!'

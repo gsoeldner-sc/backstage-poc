@@ -1,0 +1,9 @@
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: templates
+  description: All the templates in the scaffolder-templates repo
+spec:
+  targets:
+  - ./gcp-compute-engine/template.yaml
+ 
